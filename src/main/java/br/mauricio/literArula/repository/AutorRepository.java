@@ -23,4 +23,7 @@ public interface AutorRepository extends JpaRepository<Autor, Long> {
 
     @Query("select l from Livros l where l.idiomas = :idioma")
     List<Livros> listarLivrosPorIdioma(Idiomas idioma);
+
+    @Query("Select l from Livros l order by l.downloads desc limit 10")
+    List<Livros> obterTop10Baixados();
 }

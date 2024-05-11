@@ -6,6 +6,7 @@ import br.mauricio.literArula.repository.AutorRepository;
 import br.mauricio.literArula.service.ObterDados;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Principal {
 
@@ -31,6 +32,9 @@ public class Principal {
                     3 - Listar autores registrados
                     4 - Listar autores vivos em um determinado ano
                     5 - Listar livros em um determinado idioma
+                    6 - Gerar Estatística
+                    7 - Obter os top 10 mais baixados
+                    8 - Buscar pelo nome do autor
                     0 - Sair
                                         
                     """;
@@ -55,6 +59,15 @@ public class Principal {
                     break;
                 case 5:
                     listarLivrosPorIdioma();
+                    break;
+                case 6:
+                    gerarEstatistica();
+                    break;
+                case 7:
+                    obterTop10Baixados();
+                    break;
+                case 8:
+                    buscarAutor();
                     break;
                 case 0:
                     System.out.println("Obrigado por utilizar o nosso sistema... :) ");
@@ -111,16 +124,53 @@ public class Principal {
         );
         String idioma = leitura.nextLine();
 
-        List<Livros> listaPorIdioma = repository.listarLivrosPorIdioma( Idiomas.fromString(idioma));
-        if(listaPorIdioma.size() == 0){
+        List<Livros> listaPorIdioma = repository.listarLivrosPorIdioma(Idiomas.fromString(idioma));
+        if (listaPorIdioma.size() == 0) {
             System.out.println("Não existem livros nesse idioma no banco de dados");
-        }else{
+        } else {
             listaPorIdioma.forEach(System.out::println);
         }
 
     }
 
+    private void gerarEstatistica() {
+        List<Livros> livros = repository.listarLivroRegistrados();
 
+        DoubleSummaryStatistics est = livros.stream()
+                .filter(l -> l.getDownloads() > 0.0)
+                .collect(Collectors.summarizingDouble(Livros::getDownloads));
+//        DoubleSummaryStatistics{count=13, sum=7637.000000, min=11.000000, average=587.461538, max=3340.000000}
+        System.out.println("Dados:");
+        System.out.println("Média: " + Math.round(est.getAverage()));
+        System.out.println("O mais baixado: " + Math.round(est.getMax()));
+        System.out.println("O menos baixado: " + Math.round(est.getMin()));
+        System.out.println("Soma total de downloads: " + Math.round(est.getSum()));
+        System.out.println("Numero total de livros analisados: " + Math.round(est.getCount()));
+    }
+
+    private void obterTop10Baixados() {
+        List<Livros> top10 = repository.obterTop10Baixados();
+        top10.forEach(System.out::println);
+    }
+
+    private void buscarAutor() {
+        System.out.println("Digite o nome do Autor para busca: ");
+        String nomeAutor = leitura.nextLine().toLowerCase();
+
+        List<Autor> listaAutores = repository.listarAutoresRegitrados();
+
+        Optional<Autor> autorEncontrado = listaAutores.stream()
+                .filter(a -> a.getNome().toLowerCase().contains(nomeAutor))
+                .findFirst();
+
+        if (autorEncontrado.isPresent()) {
+            Autor autor = autorEncontrado.get();
+            System.out.println(autor);
+        } else {
+            System.out.println("Autor não encontrado.");
+        }
+
+    }
 }
 
 
