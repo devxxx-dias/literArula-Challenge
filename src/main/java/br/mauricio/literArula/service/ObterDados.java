@@ -2,8 +2,6 @@ package br.mauricio.literArula.service;
 
 import br.mauricio.literArula.model.DadosAutor;
 import br.mauricio.literArula.model.DadosLivro;
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,81 +9,83 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.LocalDate;
 
-public class ConverterTeste {
-    public DadosAutor autor;
-    public DadosLivro livro;
+public class ObterDados {
+    private DadosAutor autor;
+    private DadosLivro livro;
+    private String nomeAutor;
+    private String titulo;
+    private String anoDeNascimento;
+    private String anoDeFalecimento;
+    private String dowloads;
+    private String idioma;
+    private String url;
 
-    public DadosAutor obterDadosJson(String url) {
+    public ObterDados(String url) {
+        this.url = url;
+    }
 
+    public DadosAutor obterDadosAutor() {
         ObjectMapper mapper = new ObjectMapper();
-
 
         try {
             JsonNode rootNode = mapper.readTree(new URL(url));
 
-            System.out.println("Teste dentro de conveter rootNode" + rootNode);
-
             // Access the "results" array
             JsonNode resultsNode = rootNode.get("results");
+            if (resultsNode.size() == 0) {
+                System.out.println("Não foi possível encontrar um livro com esse título no nosso banco de dados");
+                throw new IllegalArgumentException("Não foi possível encontrar um livro com esse título no nosso banco de dados");
 
-            System.out.println("Dentro do converter Teste" + resultsNode);
+            }
 
 // Loop through each result object (book)
             if (resultsNode != null) {
                 for (JsonNode resultNode : resultsNode) {
-                    String titulo = resultNode.get("title").asText();
-                    String dowloads = resultNode.get("download_count").asText();
-                    String languageNode = resultNode.get("languages").asText();
 
-                    
+                    titulo = resultNode.get("title").asText();
+                    dowloads = resultNode.get("download_count").asText();
+
+                    JsonNode idiomasNode = resultNode.get("languages");
+                    // Access the "language" array inside the current result
+                    for (JsonNode idiomaNode : idiomasNode) {
+                        idioma = idiomaNode.asText();
+                    }
+
                     // Access the "authors" array inside the current result
                     JsonNode authorsNode = resultNode.get("authors");
-
-
 
                     // Loop through each author object
                     for (JsonNode authorNode : authorsNode) {
                         // Extract author information using JsonNode methods
-                        String nome = authorNode.get("name").asText();
-
-                        String anoDeNascimentoString = authorNode.get("birth_year").asText();
-                        String anoDeFalecimentoString = authorNode.get("death_year").asText();
-
-
-
-                        String anoDeNascimento = anoDeNascimentoString;
-                        String anoDeFalecimento = anoDeFalecimentoString;
-
-                        // Create a DadosAutor object with extracted data
-                        autor = new DadosAutor(nome, anoDeNascimento, anoDeFalecimento);
-
-                        // Use the DadosAutor object (e.g., print its attributes)
-                        System.out.println("Nome: " + autor);
-
-
+                        nomeAutor = authorNode.get("name").asText();
+                        anoDeNascimento = authorNode.get("birth_year").asText();
+                        anoDeFalecimento = authorNode.get("death_year").asText();
                     }
                 }
-
             }
-            return autor;
+
+
+            // Create a DadosAutor object with extracted data
+            return autor = new DadosAutor(nomeAutor, anoDeNascimento, anoDeFalecimento);
+
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
+        } catch (IllegalArgumentException e) {
+        throw new RuntimeException(e);
+    }
+    }
+
+    public DadosLivro obterDadosLivro() {
+        // Create a DadosLivro object with extracted data
+        return livro = new DadosLivro(titulo, nomeAutor, idioma, dowloads);
+
+
     }
 }
 
 
-//@JsonIgnoreProperties(ignoreUnknown = true)
-//public record DadosLivro(
-//        Long id,
-//        @JsonAlias("title") String titulo,
-//        @JsonAlias("name") String autor,
-//        @JsonAlias("languages") String idiomas,
-//        @JsonAlias("download_count") String downloads
-//) {}
